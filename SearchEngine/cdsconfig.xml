@@ -1,0 +1,45 @@
+<entities>
+  <entity>
+    <title>Patients</title>
+    <column>patients</column>
+    <id>patient_id</id>
+    <type>
+      integer</type>
+	</entity>
+
+  <entity>
+    <title>Demographics</title>
+    <column>patient_demographics</column>
+    <id>patient_demographics_id</id>
+    <type>integer</type>
+    <reference>patient_id</reference>
+    <age>age</age>
+    <gender>gender</gender>
+  </entity>
+
+  <entity>
+    <title>Diagnosis</title>
+    <column>diagnosis</column>
+    <id>diagnosis_id</id>
+    <type>integer</type>
+    <reference>patient_id</reference>
+  </entity>
+
+  <entity>
+    <title>Medications</title>
+    <column>medications</column>
+    <id>medication_id</id>
+    <type>integer</type>
+    <reference>patient_id</reference>
+  </entity>
+
+  <entity>
+    <title>Allergies</title>
+    <column>allergies</column>
+    <id>allergy_id</id>
+    <type>integer</type>
+    <reference>patient_id</reference>
+  </entity>
+
+</entities>
+ 

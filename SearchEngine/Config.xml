@@ -1,0 +1,9 @@
+﻿<operators>
+  <operator>
+    <fieldType name="string" value="1"	/>
+    <fieldType name="integer" value="2"	/>
+    <fieldType name="float" value="3"	/>
+    <fieldType name="bool" value="4"	/>
+    <fieldType name="datetime" value="5"	/>
+  </operator>
+</operators>
