@@ -1,17 +1,13 @@
-﻿<!--<script type="text/ng-template" id="myModalContent.html">-->
-    <div class="modal-header">
-        <h3 class="modal-title">I'm a modal!</h3>
+﻿
+<script type="text/ng-template" id="whatsyourname.html">
+    <div>
+        <div ng-repeat="row in SchemaInfo" ng-controller="SearchController">
+            <span class="label">Table Name</span>  <select ng-class="dropdown" ng-options="table.tblName for  table in row.tables | unique:'tblName'" ng-model="row.selectedtable"></select> <span class="label">Field Name</span>
+            <select ng-class="dropdown" ng-options="column.ColumnName for column in row.tables | filter:{ tblId: row.selectedtable.tblId} " ng-model="row.selectedField"></select>
+            <label ng-repeat="column in row.tables | filter:{ tblId: row.selectedtable.tblId}">
+                <input type="checkbox" checklist-model="column.ColumnName" checklist-value="column.ColId">
+                {{column}}
+            </label>
+        </div>
     </div>
-    <div class="modal-body">
-        <ul>
-            <li ng-repeat="item in items">
-                <a ng-click="selected.item = item">{{ item }}</a>
-            </li>
-        </ul>
-        Selected: <b>{{ selected.item }}</b>
-    </div>
-    <div class="modal-footer">
-        <button class="btn btn-primary" ng-click="ok()">OK</button>
-        <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
-    </div>
-<!--</script>-->
+</script> 

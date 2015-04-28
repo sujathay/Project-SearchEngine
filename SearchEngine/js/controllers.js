@@ -1,10 +1,51 @@
-'use strict';
-SearchEngineApp.controller('MyCtrl', function ($scope) {
-    $scope.name = 'Superhero';
+'use strict'; 
+SearchEngineApp.service('SchemaService', function ($http) {
+    var SchemaInfo = [];
+    var GetSchema = function () {
+        $http.get('http://localhost:35752/PatientService.svc/GetMetadata').success(function (response) {
+            //$scope.tables = response;
+            SchemaInfo = [{
+                rowId: 1, tables: response.tableNames,
+                operator: response.Operators,
+                groupNo: 1,
+                isGrouped: false
+            }];
+        });
+        return SchemaInfo;
+    };
+    return {
+        GetSchema: GetSchema
+    };
 });
+SearchEngineApp.controller("SearchController", function ($scope, $http, $filter, $timeout, UtilSrvc, ngTableParams, SchemaService,
+    $rootScope, $dialogs, ngDialog) {
+    $scope.modalShown = false;
+    $scope.toggleModal = function () {
+        $scope.modalShown = !$scope.modalShown;
 
-SearchEngineApp.controller("SearchController", function ($scope, $http, $filter, $timeout, UtilSrvc, ngTableParams ) {
+    };
+    $scope.SaveConfigFields = function () {
+        /// <signature>
+        ///<summary>Save configured value to db</summary> 
+        /// </signature>
+        var data = [];
+        angular.forEach($scope.Configrows[0].AlltableSchema,function(item,i)
+        {
+            if (item.isConfigured)
+                data.push({ 'table_name': item.tblId, 'field_name': item.ColumnName });
+        });
+        if(data.length>0)
+        $http({
+            url: 'http://localhost:35752/PatientService.svc/SaveFieldConfig?data=' + JSON.stringify(data),
+            method: "POST"
+        }).success(function (response) {
+            console.log(response);
+        });
+    };
     $scope.UnGroup = function (selectedgroupNo) {
+        /// <signature>
+        ///<summary>Ungroup the items grouped</summary> 
+        /// </signature>
         var selectedGroup = $scope.rows.filter(function (item) { return item.groupNo === selectedgroupNo });
         angular.forEach(selectedGroup, function (item) {
             $scope.rows[item.rowId - 1].groupNo = item.rowId;
@@ -15,13 +56,19 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         $scope.tableParams.reload();
     };
     $scope.GroupOr = function () {
+        /// <signature>
+        ///<summary>Group the selected item to OR</summary> 
+        /// </signature>
         $scope.CombineItem(true);
     };
     $scope.CombineItem = function (isOR) {
+        /// <signature>
+        ///<summary>Group the selected item to OR/AND </summary> 
+        /// </signature>
         $scope.selectedRule = [];
-        
+
         $scope.selectedRule = $scope.rows.filter(function (item) { return item.isSelected === true });
-        var isalreadyGrouped = $scope.selectedRule.filter(function (item) { return item.isGrouped === true }).length; 
+        var isalreadyGrouped = $scope.selectedRule.filter(function (item) { return item.isGrouped === true }).length;
         if ($scope.selectedRule.length >= 2) {
             if (!isalreadyGrouped) {
                 var groupNo = $scope.getRandomSpan();
@@ -42,9 +89,15 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         $scope.tableParams.reload();
     };
     $scope.getRandomSpan = function () {
+        /// <signature>
+        ///<summary>Get random number for group title</summary> 
+        /// </signature>
         return Math.random() * 6;
     };
     $scope.GroupAnd = function () {
+        /// <signature>
+        ///<summary>Group the selected item to OR</summary> 
+        /// </signature>
         $scope.CombineItem(false);
     };
     $scope.parseXml = function (xml) {
@@ -79,12 +132,25 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         var dom = $scope.parseXml(response.data);
         var json = $.xml2json(dom);
     });
+     
 
     $http.get('http://localhost:35752/PatientService.svc/GetMetadata').success(function (response) {
         $scope.tables = response;
+        $scope.Configrows = [{
+            tables: response.tableNames,
+            operator: response.Operators,
+            selectedtable: response.tableNames[0],
+            configFields: response.ConfiguredFields,
+            AlltableSchema: response.AlltableSchema
+
+        }];
+        $scope.sync = function (bool, item) {
+
+        };
         $scope.rows = [{
             rowId: 1, tables: response.tableNames,
             operator: response.Operators,
+            configFields: response.ConfiguredFields,
             groupNo: 1,
             isGrouped: false
         }];
@@ -109,7 +175,9 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
     });
 
     $scope.GetSearch = function () {
-
+        /// <signature>
+        ///<summary>Search  </summary> 
+        /// </signature>
         var objSearch = [];
         var tableName = "", operators = "", columnName = "", values = "", primarykey = "", isGrouped = "", groupNo = "", isOR = "";
         angular.forEach($scope.rows, function (item) {
@@ -183,8 +251,7 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         if ($scope.rows[$scope.rows.length - 1].selectedField
             && $scope.rows[$scope.rows.length - 1].selectedtable
             && $scope.rows[$scope.rows.length - 1].selectedOperator
-            && $scope.rows[$scope.rows.length - 1].selectedValue)
-        {
+            && $scope.rows[$scope.rows.length - 1].selectedValue) {
             $scope.rows.push({
                 rowId: $scope.rows.length + 1, tables: $scope.rows[0]["tables"],
                 operator: $scope.rows[0]["operator"],
@@ -201,44 +268,8 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         /// </signature>
         $scope.rows.pop({ "rowId": $scope.rows.length + 1 });
         $scope.tableParams.reload();
-    }
-    $scope.openColumnConfigWindow = function (size) {
-
-        //var modalInstance = $modal.open({
-        //    templateUrl: 'htm/FieldConfiguration.html',
-        //    controller: 'ModalInstanceCtrl',
-        //    size: size,
-        //    resolve: {
-        //        items: function () {
-        //            return $scope.items;
-        //        }
-        //    }
-        //});
-
-        //modalInstance.result.then(function (selectedItem) {
-        //    $scope.selected = selectedItem;
-        //}, function () {
-        //    $log.info('Modal dismissed at: ' + new Date());
-        //});
     };
 });
-SearchEngineApp.controller('ModalInstanceCtrl', function ($scope, $modalInstance, items) {
 
-    $scope.items = items;
-    $scope.selected = {
-        item: $scope.items[0]
-    };
-
-    $scope.ok = function () {
-        $modalInstance.close($scope.selected.item);
-    };
-
-    $scope.cancel = function () {
-        $modalInstance.dismiss('cancel');
-    };
-});
-SearchEngineApp.controller('groupCtrl', function ($scope) {
-    //if ($scope.group.value != 'Administrator')
-    //    $scope.group.$hideRows = true;
-    //console.log($scope.group);
+SearchEngineApp.controller('groupCtrl', function ($scope) { 
 });
