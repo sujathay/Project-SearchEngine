@@ -1,8 +1,8 @@
-'use strict'; 
+'use strict';
 SearchEngineApp.service('SchemaService', function ($http) {
     var SchemaInfo = [];
     var GetSchema = function () {
-        $http.get('http://localhost:35752/PatientService.svc/GetMetadata').success(function (response) {
+        $http.get('http://localhost:35752/PatientService.svc/GetMetadata').then(function (response) {
             //$scope.tables = response;
             SchemaInfo = [{
                 rowId: 1, tables: response.tableNames,
@@ -10,37 +10,38 @@ SearchEngineApp.service('SchemaService', function ($http) {
                 groupNo: 1,
                 isGrouped: false
             }];
+            return SchemaInfo;
         });
-        return SchemaInfo;
+
     };
     return {
         GetSchema: GetSchema
     };
 });
-SearchEngineApp.controller("SearchController", function ($scope, $http, $filter, $timeout, UtilSrvc, ngTableParams, SchemaService,
-    $rootScope, $dialogs, ngDialog) {
+SearchEngineApp.controller("SearchController", function ($scope, $http, $filter, $window, $timeout, UtilSrvc, ngTableParams, SchemaService,
+    $rootScope, $dialogs, ngDialog, $location) {
+
+    $scope.location = $location.search();
     $scope.modalShown = false;
     $scope.toggleModal = function () {
         $scope.modalShown = !$scope.modalShown;
-
     };
     $scope.SaveConfigFields = function () {
         /// <signature>
         ///<summary>Save configured value to db</summary> 
         /// </signature>
         var data = [];
-        angular.forEach($scope.Configrows[0].AlltableSchema,function(item,i)
-        {
+        angular.forEach($scope.Configrows[0].AlltableSchema, function (item, i) {
             if (item.isConfigured)
                 data.push({ 'table_name': item.tblId, 'field_name': item.ColumnName });
         });
-        if(data.length>0)
-        $http({
-            url: 'http://localhost:35752/PatientService.svc/SaveFieldConfig?data=' + JSON.stringify(data),
-            method: "POST"
-        }).success(function (response) {
-            console.log(response);
-        });
+        if (data.length > 0)
+            $http({
+                url: 'http://localhost:35752/PatientService.svc/SaveFieldConfig?data=' + JSON.stringify(data),
+                method: "POST"
+            }).success(function (response) {
+                console.log(response);
+            });
     };
     $scope.UnGroup = function (selectedgroupNo) {
         /// <signature>
@@ -132,10 +133,10 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         var dom = $scope.parseXml(response.data);
         var json = $.xml2json(dom);
     });
-     
-
     $http.get('http://localhost:35752/PatientService.svc/GetMetadata').success(function (response) {
-        $scope.tables = response;
+
+        $scope.tables = response.tableNames;
+        $scope.operator = response.Operators;
         $scope.Configrows = [{
             tables: response.tableNames,
             operator: response.Operators,
@@ -144,18 +145,43 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             AlltableSchema: response.AlltableSchema
 
         }];
-        $scope.sync = function (bool, item) {
-
-        };
         $scope.rows = [{
-            rowId: 1, tables: response.tableNames,
-            operator: response.Operators,
-            configFields: response.ConfiguredFields,
+            rowId: 1,
             groupNo: 1,
             isGrouped: false
         }];
 
+        if ($scope.location.isedit && $scope.location.id) {
+            var selectedRule = $filter('filter')($scope.allRules, { RuleId: $scope.location.id });
+            $scope.rows.length = 0;
+            $scope.rows.push({
+                "selectedtable": { "tblId": selectedRule[0].tableId },
+                "selectedField": { "ColId": selectedRule[0].ColId, "DataTypeId": 56, },
+                "selectedOperator": { "OperatorId": selectedRule[0].OperatorId, },
+                "selectedValue": "12", "isGrouped": selectedRule[0].isGrouped, "isOR": selectedRule[0].IsOR,
+                "isSelected": false, "groupNo": selectedRule[0].GroupNo
 
+            });
+            //    [{
+            //    "rowid": 1, "selectedtable": { "ColId": 1, "ColumnName": "demographics_id", "DataTypeId": 127, "foreignkeyColName": "patient_id", "max_length": 8, "tblId": 309576141, "tblName": "Demographics" },
+            //    "selectedField": { "ColId": 3, "ColumnName": "age", "DataTypeId": 56, "foreignkeyColName": "patient_id", "max_length": 4, "tblId": 309576141, "tblName": "Demographics" },
+            //    "selectedOperator": { "OperatorId": 14, "OperatorName": "Equals", "datatypeSupported": "56", "sql_operator": "=" },
+            //    "selectedValue": "12", "isGrouped": true, "isOR": false,
+            //    "isSelected": false, "groupNo": 4.562486649490893
+            //}, {
+            //    "rowid": 2, "selectedtable": { "ColId": 1, "ColumnName": "demographics_id", "DataTypeId": 127, "foreignkeyColName": "patient_id", "max_length": 8, "tblId": 309576141, "tblName": "Demographics" },
+            //    "selectedField": { "ColId": 4, "ColumnName": "gender", "DataTypeId": 175, "foreignkeyColName": "patient_id", "max_length": 8000, "tblId": 309576141, "tblName": "Demographics" },
+            //    "selectedOperator": { "OperatorId": 17, "OperatorName": "Equals", "datatypeSupported": "175", "sql_operator": "=" }, "selectedValue": "f", "isGrouped": true, "isOR": false, "isSelected": false, "groupNo": 4.562486649490893
+            //},
+            //{
+            //    "rowid": 3, "selectedtable": { "ColId": 1, "ColumnName": "patientproblem_id", "DataTypeId": 56, "foreignkeyColName": "patient_id", "max_length": 4, "tblId": 1205579333, "tblName": "CDS_PatientProblem" },
+            //    "selectedField": { "ColId": 3, "ColumnName": "problem", "DataTypeId": 167, "foreignkeyColName": "patient_id", "max_length": 8000, "tblId": 1205579333, "tblName": "CDS_PatientProblem" },
+            //    "selectedOperator": { "OperatorId": 6, "OperatorName": "Contains", "datatypeSupported": "167", "sql_operator": "%%" }, "selectedValue": "fever", "isGrouped": false, "groupNo": 3
+            //}];
+        }
+        else {
+            $scope.GetRule();
+        }
         $scope.tableParams = new ngTableParams({
             page: 1,            // show first page
             count: 100          // count per page
@@ -173,7 +199,97 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             }
         });
     });
+    $scope.SaveRule = function () {
+        var data = [];
+        angular.forEach($scope.rows, function (item, i) {
+            data.push({
+                'tblId': item.selectedtable.tblId,
+                'OperatorId': item.selectedOperator.OperatorId,
+                "ColId": item.selectedField.ColId,
+                "isGrouped": item.isGrouped,
+                "groupNo": item.groupNo,
+                "selectedValue": item.selectedValue,
+                "isOR": (item.isOR) ? false : true
+            });
+        });
+        if (data.length > 0)
+            $http({
+                url: 'http://localhost:35752/PatientService.svc/SaveRule?data=' + JSON.stringify(data),
+                method: "POST"
+            }).success(function (response) {
+                console.log(response);
+            });
+        $scope.GetRule();
+    };
+    $scope.GetRule = function () {
+        $http.get('http://localhost:35752/PatientService.svc/GetRule').success(function (response) {
+            $scope.allRules = response;
+            var data = {
+                colNames: ['Table Name', 'Field Name', 'Operator', 'Value'],
+                data: $scope.allRules,
+                colModel: [
+                     { name: 'TableName' },
+                     { name: 'ColName' },
+                     { name: 'SelectedValue'  },
+                     { name: 'RuleId', hidden: false, formatter: editLink } ] };
+            var searchObj = {
+                gridID: 'searchGrid',
+                ht: 250,
+                width: null,
+                shrinkToFit: false,
+                dataSource: data,
+                PageSize: 5,
+                sortBy: 'permobil_name',
+                isDesc: false,
+                RefreshGridHandler: null,
+                CaptionText: null,
+                customActionObj: null,
+                gridCompleted: null,
+                onRowDelete: null,
+                rowDoubleClickHandler: null,
+                onSelectRow: $scope.editrule
+            };
+            SE.CustomGrid.createGrid(searchObj);
+        });
+        //RuleId = a.rule_id,
+        //                OperatorId = a.operator_id,
+        //                ColId = a.column_id,
+        //                isGrouped = a.isgrouped,
+        //                IsOR = a.isor,
+        //                SelectedValue = a.value,
+        //                GroupNo = a.groupno,
+        //                tableId = a.table_id,
+        //                TableName = a.tableName,
+        //                ColName = a.ColName
+        //$scope.allRules = [{
+        //    "rowid": 1,
+        //    "selectedtable": {  "tblId": 309576141 },
+        //    "selectedField": { "ColId": 3,  "DataTypeId": 56,   },
+        //    "selectedOperator": { "OperatorId": 14,   },
+        //    "selectedValue": "12", "isGrouped": true, "isOR": false,
+        //    "isSelected": false, "groupNo": 4.562486649490893
+        //}, {
+        //    "rowid": 2,
+        //    "selectedtable": {   "tblId": 309576141, },
+        //    "selectedField": { "ColId": 4,   "DataTypeId": 175,   },
+        //    "selectedOperator": { "OperatorId": 17 },
+        //    "selectedValue": "f", "isGrouped": true, "isOR": false, "isSelected": false, "groupNo": 4.562486649490893
+        //},
+        //   {
+        //       "rowid": 3,
+        //       "selectedtable": {   "tblId": 1205579333  },
+        //       "selectedField": { "ColId": 3, "DataTypeId": 167  },
+        //       "selectedOperator": { "OperatorId": 102  }, "selectedValue": "fever", "isGrouped": false, "groupNo": 3
+        //   }]; 
 
+    };
+    function editLink(cellValue, options, rowdata, action) {
+        return "<a href='/#/Search?isedit=true&id=" + rowdata.RuleId + "' class='ui-icon ui-icon-pencil' ><img src='../images/edit.png'/></a>";
+    }
+    $scope.editrule = function (grid, $window) {
+        $location.path("/Search?edit/id=12");
+        //$location.search('isedit', 'true').search('id', '12');
+    };
     $scope.GetSearch = function () {
         /// <signature>
         ///<summary>Search  </summary> 
@@ -243,6 +359,7 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             console.log(response);
         });
     };
+    $scope.GetRule();
     $scope.addNewRow = function () {
         /// <signature>
         ///<summary>Adding new rule</summary> 
@@ -271,5 +388,5 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
     };
 });
 
-SearchEngineApp.controller('groupCtrl', function ($scope) { 
+SearchEngineApp.controller('groupCtrl', function ($scope) {
 });

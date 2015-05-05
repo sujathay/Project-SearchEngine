@@ -1,57 +1,23 @@
 'use strict';
 
-var SearchEngineApp = angular.module('SearchEngineApp', ['ui.directives', 'ui.filters', 'ngTable', 'ui.bootstrap', 'dialogs', 'ngDialog'], function ($httpProvider) {
-    // Use x-www-form-urlencoded Content-Type
-    $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
-
-    /**
-     * The workhorse; converts an object to x-www-form-urlencoded serialization.
-     * @param {Object} obj
-     * @return {String}
-     */
-    var param = function (obj) {
-        var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
-
-        for (name in obj) {
-            value = obj[name];
-
-            if (value instanceof Array) {
-                for (i = 0; i < value.length; ++i) {
-                    subValue = value[i];
-                    fullSubName = name + '[' + i + ']';
-                    innerObj = {};
-                    innerObj[fullSubName] = subValue;
-                    query += param(innerObj) + '&';
-                }
-            }
-            else if (value instanceof Object) {
-                for (subName in value) {
-                    subValue = value[subName];
-                    fullSubName = name + '[' + subName + ']';
-                    innerObj = {};
-                    innerObj[fullSubName] = subValue;
-                    query += param(innerObj) + '&';
-                }
-            }
-            else if (value !== undefined && value !== null)
-                query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
-        }
-
-        return query.length ? query.substr(0, query.length - 1) : query;
-    };
-
-    // Override $http service's default transformRequest
-    $httpProvider.defaults.transformRequest = [function (data) {
-        return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
-    }];
-});
+var SearchEngineApp = angular.module('SearchEngineApp', ['ui.directives', 'ui.filters', 'ngTable', 'ui.bootstrap', 'dialogs', 'ngDialog' ] 
+);
 SearchEngineApp.config(function($routeProvider ) {
     $routeProvider.when(
     	'/Search', 
     	{
     		templateUrl: 'htm/Search.html', 
     		controller: 'SearchController'
-    	}); 
+    	});
+    $routeProvider.when('/Manage',
+    	{
+    	    templateUrl: 'htm/Search.html',
+    	    controller: 'SearchController'
+    	});
+    $routeProvider.when('/Search/edit/:id', {
+        templateUrl: 'htm/Search.html',
+        controller: 'SearchController'
+    });
     $routeProvider.otherwise(
         {
             redirectTo: '/Search'
@@ -79,6 +45,28 @@ function () {
         }
     };
 });
+
+SearchEngineApp.directive('myMaxlength', ['$compile', '$log', function ($compile, $log) {
+    return {
+        restrict: 'A',
+        require: 'ngModel',
+        link: function (scope, elem, attrs, ctrl) {
+            attrs.$set("ngTrim", "false");
+            var maxlength = parseInt(attrs.myMaxlength, 10);
+            ctrl.$parsers.push(function (value) {
+               // $log.info("In parser function value = [" + value + "].");
+                if (value.length > maxlength) {
+                   // $log.info("The value [" + value + "] is too long!");
+                    value = value.substr(0, maxlength);
+                    ctrl.$setViewValue(value);
+                    ctrl.$render();
+                   // $log.info("The value is now truncated as [" + value + "].");
+                }
+                return value;
+            });
+        }
+    };
+}]);
 SearchEngineApp.directive('modalDialog', function () {
     return {
         restrict: 'E',
@@ -99,4 +87,55 @@ SearchEngineApp.directive('modalDialog', function () {
         },
         template: "<div class='ng-modal' ng-show='show'><div class='ng-modal-overlay' ng-click='hideModal()'></div><div class='ng-modal-dialog' ng-style='dialogStyle'><div class='ng-modal-close' ng-click='hideModal()'>X</div><div class='ng-modal-dialog-content' ng-transclude></div></div></div>"
     };
-}); 
+});
+
+SearchEngineApp.directive('srMaxlength', ['$window', srMaxlength]);
+
+function srMaxlength($window) {
+    // Usage:
+    // use if you need to switch max length validation dynamically based on
+    // Creates:
+    // removes old validator for max length and creates new one 
+    var directive = {
+        require: 'ngModel',
+        link: link,
+        restrict: 'A'
+    };
+
+    return directive;
+
+    function link(scope, element, attrs, ctrl) {
+        attrs.$observe("srMaxlength", function (newval) {
+            var maxlength = parseInt(newval, 10);
+            var name = "srMaxLengthValidator";
+
+            for (var i = ctrl.$parsers.length - 1; i >= 0; i--) {
+                if (ctrl.$parsers[i].name !== undefined && ctrl.$parsers[i].name == name) {
+                    ctrl.$parsers.splice(i, 1);
+                }
+            }
+
+            for (var j = ctrl.$formatters.length - 1; j >= 0; j--) {
+                if (ctrl.$formatters[j].name !== undefined && ctrl.$formatters[j].name == name) {
+                    ctrl.$formatters.splice(j, 1);
+                }
+            }
+
+            ctrl.$parsers.push(maxLengthValidator);
+            ctrl.$formatters.push(maxLengthValidator);
+
+            //name the function so we can find it always by the name
+            maxLengthValidator.name = name;
+
+            function maxLengthValidator(value) {
+                if (!ctrl.$isEmpty(value) && value.length > maxlength) {
+                    ctrl.$setValidity('maxlength', false);
+                    return undefined;
+                } else {
+                    ctrl.$setValidity('maxlength', true);
+                    return value;
+                }
+            }
+        });
+    }
+}
