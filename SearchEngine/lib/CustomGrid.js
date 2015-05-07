@@ -93,6 +93,12 @@ SE.CustomGrid = {
       
 
         grid.jqGrid({
+            grouping: true,
+            groupingView: {
+                groupField: ['RuleName'],
+                groupColumnShow: [false],
+                groupText:""
+            },
             datatype: "local",
             data: settings.dataSource.data,
             colNames: settings.dataSource.colNames,
@@ -133,11 +139,11 @@ SE.CustomGrid = {
                     settings.rowDoubleClickHandler(rowid);
                 }
             },
-            onSelectRow: function (rowid, iRow, iCol, e) {
-                if ((iCol && iCol.target && iCol.target.src) || (iCol && iCol.target && iCol.target.tagName.toLowerCase() == "span"))
-                { return false; }
-                else { settings.onSelectRow(rowid); }
-            },
+            //onSelectRow: function (rowid, iRow, iCol, e) {
+            //    if ((iCol && iCol.target && iCol.target.src) || (iCol && iCol.target && iCol.target.tagName.toLowerCase() == "span"))
+            //    { return false; }
+            //    else { settings.onSelectRow(rowid); }
+            //},
             viewrecords: true,
             width: (!settings.wd && settings.wd.length>0) ? settings.wd : null,
             height: settings.ht,
@@ -146,7 +152,7 @@ SE.CustomGrid = {
             pagerpos: 'right',
             recordpos: 'left',
             editurl: 'clientArray',
-            emptyrecords: "No Notes found.",
+            emptyrecords: "No Rules found.",
             loadComplete: function (grid) { if (settings.gridCompleted) { settings.gridCompleted($("#" + settings.gridID)); } }, 
         });
          

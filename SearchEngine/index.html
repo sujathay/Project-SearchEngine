@@ -3,40 +3,51 @@
 <head>
     <meta charset="utf-8">
     <title>Search Engine</title>
-    <link rel="stylesheet" href="css/app.css" /> 
+    <link rel="stylesheet" href="css/app.css" />
 
     <link href="css/bootstrap.css" rel="stylesheet" />
+    <!--<link href="css/bootstrap-combined.min.css" rel="stylesheet" />-->
+    <link href="css/redmondTheme.css" rel="stylesheet" />
+    <link href="css/jquery-ui.css" rel="stylesheet" />
+    <link href="css/Menu.css" rel="stylesheet" />
 </head>
-<body> 
-    <div ng-view>
+<body>
+    <div class="MainContainer">
+        <div >
+            <nav class="{{active}}">  
+                <a href="/#/Search" class="home" ng-click="active='home'" >Home</a>
+                <a href="#" class="projects" ng-click="active='projects'">Search</a> 
+            </nav>
+
+            <!--<ul>
+                <li><a href="/#/Search" class="home" ng-click="active='home'">Home</a></li>
+                <li><a href="#" class="projects" ng-click="active='projects'">Search</a> </li>
+               
+            </ul>-->
+        </div>
+        <hr />
+        <div ng-view>
+        </div>
     </div>
-    <script src="js/jquery-1.11.2.min.js"></script>  
-      
-    <!--<script src="lib/angular/angular.js"></script>-->
-    <!--<script src="lib/angular/angular-route.js"></script>--> 
+    <script src="js/jquery-1.11.2.min.js"></script> 
     <script src="lib/angular/angular.min.js"></script>
     <script src="lib/grid.locale-en.js"></script>
-    <script src="lib/JqGrid.js"></script>
-    <!--<script src="lib/ngModel.min.js"></script>-->
+    <script src="lib/JqGrid.js"></script> 
     <script src="lib/ng-table.map.js"></script>
-    <link  href="css/ngtable.css" rel="stylesheet" />
+    <link href="css/ngtable.css" rel="stylesheet" />
     <script src="lib/ui-bootstrap-tpls-0.3.0.js"></script>
     <script src="js/dialog.min.js"></script>
-    <script src="lib/ngDialog.js"></script>
-    <!--<link href="css/bootstrap-combined.min.css" rel="stylesheet" />-->
-    <!--<script src="lib/jquery_ui.js"></script>-->
-    <!--<script src="lib/jquery-ui-1.9.2.custom.min.js"></script>-->
+    <script src="lib/ngDialog.js"></script> 
     <script src="lib/CustomGrid.js"></script>
     <script src="lib/ui_utils/ui-utils.min.js"></script>
     <script src="lib/jquery.xml2json.js"></script>
     <script src="lib/jquery.xml2json.pack.js"></script>
-   
     <script src="js/routes.js"></script>
     <script src="js/services.js"></script>
     <script src="js/controllers.js"></script>
     <script src="js/FieldConfigController.js"></script>
     <script src="js/filters.js"></script>
     <script src="js/directives.js"></script>
-    <script src="http://codepen.io/assets/editor/live/css_live_reload_init.js"></script>
+    <!--<script src="http://codepen.io/assets/editor/live/css_live_reload_init.js"></script>-->
 </body>
 </html>

@@ -19,30 +19,13 @@ SearchEngineApp.service('SchemaService', function ($http) {
     };
 });
 SearchEngineApp.controller("SearchController", function ($scope, $http, $filter, $window, $timeout, UtilSrvc, ngTableParams, SchemaService,
-    $rootScope, $dialogs, ngDialog, $location) {
-
+    $rootScope, $dialogs, ngDialog, $location, $compile) {
     $scope.location = $location.search();
     $scope.modalShown = false;
     $scope.toggleModal = function () {
         $scope.modalShown = !$scope.modalShown;
     };
-    $scope.SaveConfigFields = function () {
-        /// <signature>
-        ///<summary>Save configured value to db</summary> 
-        /// </signature>
-        var data = [];
-        angular.forEach($scope.Configrows[0].AlltableSchema, function (item, i) {
-            if (item.isConfigured)
-                data.push({ 'table_name': item.tblId, 'field_name': item.ColumnName });
-        });
-        if (data.length > 0)
-            $http({
-                url: 'http://localhost:35752/PatientService.svc/SaveFieldConfig?data=' + JSON.stringify(data),
-                method: "POST"
-            }).success(function (response) {
-                console.log(response);
-            });
-    };
+     
     $scope.UnGroup = function (selectedgroupNo) {
         /// <signature>
         ///<summary>Ungroup the items grouped</summary> 
@@ -100,38 +83,17 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         ///<summary>Group the selected item to OR</summary> 
         /// </signature>
         $scope.CombineItem(false);
-    };
-    $scope.parseXml = function (xml) {
-        /// <signature>
-        ///<summary>Parsing xml data to json</summary> 
-        /// </signature>
-        var dom = null;
-        if (window.DOMParser) {
-            try {
-                dom = (new DOMParser()).parseFromString(xml, "text/xml");
-            }
-            catch (e) { dom = null; }
-        }
-        else if (window.ActiveXObject) {
-            try {
-                dom = new ActiveXObject('Microsoft.XMLDOM');
-                dom.async = false;
-                if (!dom.loadXML(xml)) // parse error ..
+    }; 
+    $scope.$watchCollection('rows', function (newCol, oldCol, scope) {
+        console.log(newCol);
+        console.log("newvalue");
+        console.log(oldCol);
+        console.log(scope);
 
-                    window.alert(dom.parseError.reason + dom.parseError.srcText);
-            }
-            catch (e) { dom = null; }
-        }
-        else
-            alert("cannot parse xml string!");
-        return dom;
-    };
-    $http.get('/Config.xml').then(function (response) {
-        /// <signature>
-        ///<summary>Converting xml to json</summary> 
-        /// </signature>
-        var dom = $scope.parseXml(response.data);
-        var json = $.xml2json(dom);
+        //for (var index in newCol) {
+        //    var item = newCol[index];
+        //    item.order = parseInt(index) + 1;
+        //}
     });
     $http.get('http://localhost:35752/PatientService.svc/GetMetadata').success(function (response) {
 
@@ -142,44 +104,52 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             operator: response.Operators,
             selectedtable: response.tableNames[0],
             configFields: response.ConfiguredFields,
-            AlltableSchema: response.AlltableSchema
+            AlltableSchema: response.AlltableSchema,
+           // selectedField: $filter('filter')($scope.tables, { DataTypeId: $scope.tables.DataTypeId })[0]
 
         }];
         $scope.rows = [{
             rowId: 1,
-            groupNo: 1,
-            isGrouped: false
+            groupNo: $scope.getRandomSpan(),
+            isGrouped: false,
+            //selectedField: $filter('filter')($scope.tables, { DataTypeId: $scope.tables.DataTypeId })[0]
         }];
 
         if ($scope.location.isedit && $scope.location.id) {
-            var selectedRule = $filter('filter')($scope.allRules, { RuleId: $scope.location.id });
+            $scope.isEdit=true;
+            var selectedRule = $filter('filter')($scope.allRules, { RuleName: $scope.location.id });
+           
             $scope.rows.length = 0;
-            $scope.rows.push({
-                "selectedtable": { "tblId": selectedRule[0].tableId },
-                "selectedField": { "ColId": selectedRule[0].ColId, "DataTypeId": 56, },
-                "selectedOperator": { "OperatorId": selectedRule[0].OperatorId, },
-                "selectedValue": "12", "isGrouped": selectedRule[0].isGrouped, "isOR": selectedRule[0].IsOR,
-                "isSelected": false, "groupNo": selectedRule[0].GroupNo
-
-            });
-            //    [{
-            //    "rowid": 1, "selectedtable": { "ColId": 1, "ColumnName": "demographics_id", "DataTypeId": 127, "foreignkeyColName": "patient_id", "max_length": 8, "tblId": 309576141, "tblName": "Demographics" },
-            //    "selectedField": { "ColId": 3, "ColumnName": "age", "DataTypeId": 56, "foreignkeyColName": "patient_id", "max_length": 4, "tblId": 309576141, "tblName": "Demographics" },
-            //    "selectedOperator": { "OperatorId": 14, "OperatorName": "Equals", "datatypeSupported": "56", "sql_operator": "=" },
-            //    "selectedValue": "12", "isGrouped": true, "isOR": false,
-            //    "isSelected": false, "groupNo": 4.562486649490893
-            //}, {
-            //    "rowid": 2, "selectedtable": { "ColId": 1, "ColumnName": "demographics_id", "DataTypeId": 127, "foreignkeyColName": "patient_id", "max_length": 8, "tblId": 309576141, "tblName": "Demographics" },
-            //    "selectedField": { "ColId": 4, "ColumnName": "gender", "DataTypeId": 175, "foreignkeyColName": "patient_id", "max_length": 8000, "tblId": 309576141, "tblName": "Demographics" },
-            //    "selectedOperator": { "OperatorId": 17, "OperatorName": "Equals", "datatypeSupported": "175", "sql_operator": "=" }, "selectedValue": "f", "isGrouped": true, "isOR": false, "isSelected": false, "groupNo": 4.562486649490893
-            //},
-            //{
-            //    "rowid": 3, "selectedtable": { "ColId": 1, "ColumnName": "patientproblem_id", "DataTypeId": 56, "foreignkeyColName": "patient_id", "max_length": 4, "tblId": 1205579333, "tblName": "CDS_PatientProblem" },
-            //    "selectedField": { "ColId": 3, "ColumnName": "problem", "DataTypeId": 167, "foreignkeyColName": "patient_id", "max_length": 8000, "tblId": 1205579333, "tblName": "CDS_PatientProblem" },
-            //    "selectedOperator": { "OperatorId": 6, "OperatorName": "Contains", "datatypeSupported": "167", "sql_operator": "%%" }, "selectedValue": "fever", "isGrouped": false, "groupNo": 3
-            //}];
+            angular.forEach(selectedRule, function (item) {
+                var isAvailable = $filter('filter')($scope.tables, { tblId: item.tableId });
+                if (isAvailable.length<=0) {
+                    $scope.tables.push(
+                        {
+                            "ColId": item.ColId,
+                            "ColumnName": item.ColName,
+                            "DataTypeId": item.DatatypeSupported,
+                            "EntityName": item.EntityName, 
+                            "max_length": 8,
+                            "tblId": item.tableId,
+                            "tblName": item.TableName,
+                            "isAvailable":(isAvailable.length>0)?true:false
+                            //"selectedOperator": { "OperatorId": item.OperatorId },
+                        }
+                    );
+                }
+                $scope.rows.push({                    
+                    "selectedtable": { "tblId": item.tableId },
+                    "selectedField": { "ColId": item.ColId, "DataTypeId": item.DatatypeSupported, },
+                    "selectedOperator": { "OperatorId": item.OperatorId, },
+                    "selectedValue": item.SelectedValue, "isGrouped": item.isGrouped, "isOR": item.IsOR,
+                    "isSelected": false, "groupNo": item.GroupNo,
+                    "isAvailable":(isAvailable.length>0)?true:false
+                });
+                
+            }); 
         }
         else {
+            $scope.isEdit=false;
             $scope.GetRule();
         }
         $scope.tableParams = new ngTableParams({
@@ -202,36 +172,84 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
     $scope.SaveRule = function () {
         var data = [];
         angular.forEach($scope.rows, function (item, i) {
-            data.push({
-                'tblId': item.selectedtable.tblId,
-                'OperatorId': item.selectedOperator.OperatorId,
-                "ColId": item.selectedField.ColId,
-                "isGrouped": item.isGrouped,
-                "groupNo": item.groupNo,
-                "selectedValue": item.selectedValue,
-                "isOR": (item.isOR) ? false : true
-            });
+            if (item.selectedtable && item.selectedOperator && item.selectedField && item.selectedValue) {
+                if (!item.isAvailable) {
+                    alert('Sorry one of the table u selected is not available');
+                    return false;
+                }
+                else {
+                    data.push({
+                        'tblId': item.selectedtable.tblId,
+                        'OperatorId': item.selectedOperator.OperatorId,
+                        "ColId": item.selectedField.ColId,
+                        "isGrouped": item.isGrouped,
+                        "groupNo": item.groupNo,
+                        "selectedValue": item.selectedValue,
+                        "isOR": (item.isOR) ? false : true,
+                        "isEdit": ($scope.isEdit) ? $scope.isEdit : false,
+                        "RuleName": ($scope.isEdit) ? $scope.location.id : "",
+                    });
+                }
+            } else {
+                alert("Please select the rule")
+            }
         });
-        if (data.length > 0)
+        if (data.length > 0) {
             $http({
                 url: 'http://localhost:35752/PatientService.svc/SaveRule?data=' + JSON.stringify(data),
                 method: "POST"
             }).success(function (response) {
-                console.log(response);
+                $scope.GetRule();
             });
-        $scope.GetRule();
+            
+        }
+        
+    };
+    $scope.DeleteRule = function () {
+        /// <signature>
+        ///<summary>Delete rule  </summary> 
+        /// </signature>
+        alert('are u sure want to delete the rule');
+        return false;
     };
     $scope.GetRule = function () {
         $http.get('http://localhost:35752/PatientService.svc/GetRule').success(function (response) {
             $scope.allRules = response;
             var data = {
-                colNames: ['Table Name', 'Field Name', 'Operator', 'Value'],
+                colNames: ['Table Name', 'Field Name', 'Operator','', 'Action' ,'dfd' ],
                 data: $scope.allRules,
                 colModel: [
-                     { name: 'TableName' },
-                     { name: 'ColName' },
-                     { name: 'SelectedValue'  },
-                     { name: 'RuleId', hidden: false, formatter: editLink } ] };
+                     { name: 'TableName',  width: 30, resizable: true},
+                     { name: 'ColName', resizable: true, width: 30 },
+                     { name: 'SelectedValue', resizable: true, width: 30 },
+                     { name: 'ColName', formatter: editLink, resizable: true, width: 5 }, 
+                     
+                      {
+                          name: 'actions', index: 'actions', formatter: 'actions',
+                          width: 4,
+                          formatoptions: {
+                              keys: true,
+                              editbutton: false,
+                              delOptions: {
+                                  afterShowForm: function (form) {
+                                      $("#dData").removeClass();
+                                      $("#dData").addClass("submit-btn");
+                                      $("#eData").removeClass();
+                                      $("#eData").addClass("submit-btn");
+                                  },
+                                  delicon: 'delicon',
+                                  msg: 'Are you sure want to delete this rule?',
+                                  beforeSubmit: function (id) {
+                                      //  Permobil.CustomNotes.Delete(id);
+                                      $('.ui-icon-closethick').trigger('click');
+                                      return "1";
+                                  }
+                              }
+                          }
+                      },
+            { name: 'RuleName',width:1, hidden: false }
+                ]
+            };
             var searchObj = {
                 gridID: 'searchGrid',
                 ht: 250,
@@ -239,53 +257,39 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
                 shrinkToFit: false,
                 dataSource: data,
                 PageSize: 5,
-                sortBy: 'permobil_name',
+                sortBy: 'RuleName',
                 isDesc: false,
                 RefreshGridHandler: null,
                 CaptionText: null,
                 customActionObj: null,
-                gridCompleted: null,
+                gridCompleted: $scope.GridCompleted,
                 onRowDelete: null,
                 rowDoubleClickHandler: null,
-                onSelectRow: $scope.editrule
+                onSelectRow: null
             };
             SE.CustomGrid.createGrid(searchObj);
-        });
-        //RuleId = a.rule_id,
-        //                OperatorId = a.operator_id,
-        //                ColId = a.column_id,
-        //                isGrouped = a.isgrouped,
-        //                IsOR = a.isor,
-        //                SelectedValue = a.value,
-        //                GroupNo = a.groupno,
-        //                tableId = a.table_id,
-        //                TableName = a.tableName,
-        //                ColName = a.ColName
-        //$scope.allRules = [{
-        //    "rowid": 1,
-        //    "selectedtable": {  "tblId": 309576141 },
-        //    "selectedField": { "ColId": 3,  "DataTypeId": 56,   },
-        //    "selectedOperator": { "OperatorId": 14,   },
-        //    "selectedValue": "12", "isGrouped": true, "isOR": false,
-        //    "isSelected": false, "groupNo": 4.562486649490893
-        //}, {
-        //    "rowid": 2,
-        //    "selectedtable": {   "tblId": 309576141, },
-        //    "selectedField": { "ColId": 4,   "DataTypeId": 175,   },
-        //    "selectedOperator": { "OperatorId": 17 },
-        //    "selectedValue": "f", "isGrouped": true, "isOR": false, "isSelected": false, "groupNo": 4.562486649490893
-        //},
-        //   {
-        //       "rowid": 3,
-        //       "selectedtable": {   "tblId": 1205579333  },
-        //       "selectedField": { "ColId": 3, "DataTypeId": 167  },
-        //       "selectedOperator": { "OperatorId": 102  }, "selectedValue": "fever", "isGrouped": false, "groupNo": 3
-        //   }]; 
-
+        }); 
+    };
+    $scope.GridCompleted = function (grid) {
+        /// <signature>
+        ///<summary>On grid complete , hiding header, unneccessary page info in grid pager tab</summary> 
+        /// </signature> 
+        $(".ui-paging-info").hide();
+        $("#lui_searchGrid").hide();
+        $("#searchGrid tr.jqgroup:contains('(1)') + .jqgrow + .jqfoot").hide();
+        $(".ui-searchGrid-titlebar").hide();
+        if ($("#searchGrid").getGridParam("reccount") == 0) {
+            $("#pgr_searchGrid_left div").show();
+            $("#pgr_searchGrid_right").hide();
+        }
+        //compiling DOM after table load
+        $compile(angular.element('#searchGrid'))($scope);
     };
     function editLink(cellValue, options, rowdata, action) {
-        return "<a href='/#/Search?isedit=true&id=" + rowdata.RuleId + "' class='ui-icon ui-icon-pencil' ><img src='../images/edit.png'/></a>";
-    }
+        return '<a  href="/#/Search?isedit=true&id=' + rowdata.RuleName + '" ><img src="../images/edit.png"/></a>';
+        // <img src="../images/Remove.jpg"  ng-click="DeleteRule()"/>
+    }; 
+   
     $scope.editrule = function (grid, $window) {
         $location.path("/Search?edit/id=12");
         //$location.search('isedit', 'true').search('id', '12');
@@ -306,7 +310,6 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             groupNo += item.groupNo + ",";
             isOR += item.isOR + ",";
         });
-
         // removing end comma
         tableName = tableName.substring(0, tableName.length - 1);
         operators = operators.substring(0, operators.length - 1);
@@ -341,10 +344,10 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             var searchObj = {
                 gridID: 'searchGrid',
                 ht: 250,
-                width: null,
-                shrinkToFit: false,
+                width: 800,
+               // shrinkToFit: false,
                 dataSource: data,
-                PageSize: 5,
+                PageSize: 1,
                 sortBy: 'permobil_name',
                 isDesc: false,
                 RefreshGridHandler: null,
@@ -368,14 +371,21 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         if ($scope.rows[$scope.rows.length - 1].selectedField
             && $scope.rows[$scope.rows.length - 1].selectedtable
             && $scope.rows[$scope.rows.length - 1].selectedOperator
-            && $scope.rows[$scope.rows.length - 1].selectedValue) {
-            $scope.rows.push({
-                rowId: $scope.rows.length + 1, tables: $scope.rows[0]["tables"],
-                operator: $scope.rows[0]["operator"],
-                groupNo: $scope.rows.length + 1,
-                isGrouped: false
-            });
-            $scope.tableParams.reload();
+            && $scope.rows[$scope.rows.length - 1].selectedValue.length>0) {
+            var isDeletedTable = $scope.tables.filter(function (item) { return item.isAvailable === false }); 
+            if (isDeletedTable.length > 0) { 
+                alert("Table you have selected is not available in db. Please select valid one to proceed");
+                return false;
+            }
+            else {
+                $scope.rows.push({
+                    rowId: $scope.rows.length + 1, tables: $scope.rows[0]["tables"],
+                    operator: $scope.rows[0]["operator"],
+                    groupNo: $scope.getRandomSpan(),
+                    isGrouped: false
+                });
+                $scope.tableParams.reload();
+            }
         }
 
     }
