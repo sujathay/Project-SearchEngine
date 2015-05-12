@@ -1,6 +1,6 @@
 'use strict';
 
-var SearchEngineApp = angular.module('SearchEngineApp', ['ui.directives', 'ui.filters', 'ngTable', 'ui.bootstrap', 'dialogs', 'ngDialog' ] 
+var SearchEngineApp = angular.module('SearchEngineApp', ['ui.directives', 'ui.filters', 'ngTable', 'ui.bootstrap', 'dialogs', 'ngDialog'  ] 
 );
 SearchEngineApp.config(function($routeProvider ) {
     $routeProvider.when(
@@ -45,6 +45,8 @@ function () {
         }
     };
 });
+
+
 
 SearchEngineApp.directive('myMaxlength', ['$compile', '$log', function ($compile, $log) {
     return {

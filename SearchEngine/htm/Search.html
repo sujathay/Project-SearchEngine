@@ -1,24 +1,21 @@
 
 <div class="topdiv">
     <div class="side left"></div>
-    <div > 
+    <div>
         <div style="width: 90%; margin: 0% 2%;">
-            <!--<table style="width:100%" ng-table="tableParams" class="table ng-table-responsive">-->
-            <table style="width: 90%; margin: 0% 2%;" ng-table="tableParams" class="table">
+            <table style="width: 100%; margin: 0% 2%;" ng-table="tableParams" class="table">
                 <tbody ng-repeat="group in $groups" ng-controller="groupCtrl">
                     <tr class="ng-table-group">
                         <td colspan="{{$columns.length}}" ng-show="group.data[0]['isGrouped']===true">
                             <a href="" ng-click="group.$hideRows = !group.$hideRows">
-                                <span class="ui-icon ui-icon-circlesmall-minus tree-wrap-ltr" 
-                                      <!--ng-class=" { 'ui-icon-circlesmall-minus'
-                                      group.$hiderows, 'ui-icon-circlesmall-plus'
-                                      !group.$hiderows }"-->
-                                      ></span>
-                                <!--<span>{{(group.data[0]['isGrouped'])?( ( group.data[0]['isOR']===true)?'Or>>':'And>>'):''}} </span>-->                                
-                            </a> 
+                                <!--<span class="ui-icon ui-icon-circlesmall-minus tree-wrap-ltr" ></span>-->
+                                <!--ng-class=" { 'ui-icon-circlesmall-minus'
+                                group.$hiderows, 'ui-icon-circlesmall-plus'
+                                !group.$hiderows }"-->
+                                <span>{{(group.data[0]['isGrouped'])?( ( group.data[0]['isOR']===true)?'Or>>':'And>>'):''}} </span>
+                            </a>
                             <div show-on-row-hover style="display:none;float:left">
                                 <i tooltip-popup-delay="0" tooltip-placement="top" tooltip="Some tooltip text" class="icon-info-sign"></i>
-
                             </div>
                             <div show-on-row-hover style="display:none;float:right" class="contextMenu">
                                 <ul show-on-row-hover style="display:none;">
@@ -39,37 +36,32 @@
                         </td>
                     </tr>
                     <tr ng-hide="group.$hideRows" ng-repeat="row in group.data">
-                        <td  >
-                            <!--{{row}}
-                            selectOp{{row.selectedOperator}}-->
-                            <!--ng-class="{disabledRow:  row.isAvailable.length>0}"-->
-                            <input type="checkbox"   ng-model="row.isSelected" />
+                        <td>
+                            <input type="checkbox" ng-model="row.isSelected" /> 
                             <span class="label">Table Name</span> <select ng-class="dropdown"
                                                                           ng-options="table.tblName for  table in tables | unique:'tblName' track by table.tblId "
                                                                           ng-model="row.selectedtable"></select>
                             <span class="label">Field Name</span>
                             <select ng-class="dropdown" ng-options="column.ColumnName for column in tables | filter:{ tblId: row.selectedtable.tblId} track by column.ColId   "
-                                    ng-model="row.selectedField"></select>
-
+                                    ng-model="row.selectedField" ng-change="ClearValue(row)"></select>
                             <span class="label">Operator</span><select ng-class="dropdown" ng-options="item.OperatorName for item in operator | filter:{ datatypeSupported: row.selectedField.DataTypeId} track by item.OperatorId   "
                                                                        ng-model="row.selectedOperator"></select>
-                            <input id="txtValue" ng-model="row.selectedValue" />
+                            <input ng-show="row.isNumericType" ng-model="row.selectedValue" numbers-only="numbers-only" type="text" id="{{row.rowId}}" name="{{row.rowId}}" />
+                            <input ng-show="row.isString" ng-model="row.selectedValue" type="text" id="{{row.rowId}}" name="{{row.rowId}}" /><!--class="{{elem.class}}" placeholder="{{elem.placeholder}}" popover-trigger="focus" popover="{{elem.popoverText}}">-->
+                            <input ng-model="row.selectedValue" ng-show="row.isDate" id="{{row.rowId}}" type="text" class="form-control" datepicker-popup="{{format}}" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" close-text="Close" />
                             <img src="../images/Add.jpg" ng-click="addNewRow()" />
                             <img src="../images/Remove.jpg" ng-show="rows.length>1" ng-click="removeRow(item)" />
-                            <hr style="width:80%" ng-show="group.data.length>1 && group.data.length==row.rowId" />
-
-
+                            <!--<hr style="width:100%" ng-show="group.data.length>1 && group.data.length==row.rowId" />-->
                         </td>
 
                     </tr>
                 </tbody>
             </table>
-            <!--</table>-->
         </div>
         <div>
-            <button type="button" class="btn" ng-click="SaveRule()">Save</button>
-            <button type="button" class="btn" ng-click="GroupAnd()">Group AND</button>
-            <button type="button" class="btn" ng-click="GroupOr()">Group OR</button> 
+            <button type="button" class="btns" ng-click="SaveRule()">Save</button>
+            <button type="button" class="btns" ng-click="GroupAnd()">Group AND</button>
+            <button type="button" class="btns" ng-click="GroupOr()">Group OR</button>
             <!--<button type="button" ng-click="toggleModal()">Config</button>-->
             <modal-dialog show='modalShown' width='400px' height='80%'>
                 <div style="border: 1px solid black;height: 88%;margin-top: 3%;">
@@ -85,9 +77,9 @@
                     <div><button type="button" ng-click="SaveConfigFields()">Save</button></div>
                 </div>
             </modal-dialog>
-        </div> 
-        <div style="width: 100%; " ng-hide="(location.isedit &&  location.id)"> 
-            <table  id="searchGrid"></table>
+        </div>
+        <div style="width: 100%; " ng-hide="(location.isedit &&  location.id)">
+            <table id="searchGrid"></table>
 
         </div>
     </div>

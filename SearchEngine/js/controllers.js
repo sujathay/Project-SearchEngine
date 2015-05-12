@@ -1,3 +1,4 @@
+/// <reference path="Constants.js" />
 'use strict';
 SearchEngineApp.service('SchemaService', function ($http) {
     var SchemaInfo = [];
@@ -25,7 +26,19 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
     $scope.toggleModal = function () {
         $scope.modalShown = !$scope.modalShown;
     };
-     
+    $scope.ClearValue = function (row) {
+        row.selectedValue = null;
+        $scope.CheckNumericType(row);
+    };
+    $scope.CheckNumericType = function (row) {
+        var isNumeric = CDS_.Settings.NUMBER_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
+        var isString = CDS_.Settings.STRING_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
+        var isDate = CDS_.Settings.DATE_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
+        row.isNumericType = (isNumeric && isNumeric.length > 0) ? true : false;
+        row.isString = (!row.isNumericType && isString && isString.length > 0) ? true : false;
+        row.isDate = (!row.isNumericType && !row.isString && isDate && isDate.length > 0) ? true : false;
+    };
+
     $scope.UnGroup = function (selectedgroupNo) {
         /// <signature>
         ///<summary>Ungroup the items grouped</summary> 
@@ -83,18 +96,7 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         ///<summary>Group the selected item to OR</summary> 
         /// </signature>
         $scope.CombineItem(false);
-    }; 
-    $scope.$watchCollection('rows', function (newCol, oldCol, scope) {
-        console.log(newCol);
-        console.log("newvalue");
-        console.log(oldCol);
-        console.log(scope);
-
-        //for (var index in newCol) {
-        //    var item = newCol[index];
-        //    item.order = parseInt(index) + 1;
-        //}
-    });
+    };
     $http.get('http://localhost:35752/PatientService.svc/GetMetadata').success(function (response) {
 
         $scope.tables = response.tableNames;
@@ -105,51 +107,57 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             selectedtable: response.tableNames[0],
             configFields: response.ConfiguredFields,
             AlltableSchema: response.AlltableSchema,
-           // selectedField: $filter('filter')($scope.tables, { DataTypeId: $scope.tables.DataTypeId })[0]
+            // selectedField: $filter('filter')($scope.tables, { DataTypeId: $scope.tables.DataTypeId })[0]
 
         }];
+
         $scope.rows = [{
             rowId: 1,
             groupNo: $scope.getRandomSpan(),
             isGrouped: false,
+            //"inputtype": "text",
+            "isAvailable": true,
+            isString: true
             //selectedField: $filter('filter')($scope.tables, { DataTypeId: $scope.tables.DataTypeId })[0]
         }];
 
         if ($scope.location.isedit && $scope.location.id) {
-            $scope.isEdit=true;
+            $scope.isEdit = true;
             var selectedRule = $filter('filter')($scope.allRules, { RuleName: $scope.location.id });
-           
             $scope.rows.length = 0;
-            angular.forEach(selectedRule, function (item) {
+            angular.forEach(selectedRule, function (item, i) {
                 var isAvailable = $filter('filter')($scope.tables, { tblId: item.tableId });
-                if (isAvailable.length<=0) {
+                if (isAvailable.length <= 0) {
                     $scope.tables.push(
                         {
                             "ColId": item.ColId,
                             "ColumnName": item.ColName,
                             "DataTypeId": item.DatatypeSupported,
-                            "EntityName": item.EntityName, 
+                            "EntityName": item.EntityName,
                             "max_length": 8,
                             "tblId": item.tableId,
                             "tblName": item.TableName,
-                            "isAvailable":(isAvailable.length>0)?true:false
+                            "isAvailable": (isAvailable.length > 0) ? true : false
                             //"selectedOperator": { "OperatorId": item.OperatorId },
                         }
                     );
                 }
-                $scope.rows.push({                    
+                $scope.rows.push({
+                    rowId: i + 1,
                     "selectedtable": { "tblId": item.tableId },
                     "selectedField": { "ColId": item.ColId, "DataTypeId": item.DatatypeSupported, },
                     "selectedOperator": { "OperatorId": item.OperatorId, },
                     "selectedValue": item.SelectedValue, "isGrouped": item.isGrouped, "isOR": item.IsOR,
                     "isSelected": false, "groupNo": item.GroupNo,
-                    "isAvailable":(isAvailable.length>0)?true:false
+                    "isAvailable": (isAvailable.length > 0) ? true : false,
+                  //  "inputtype": (item.DatatypeSupported == 40 || item.DatatypeSupported == 42 || item.DatatypeSupported == 43 || item.DatatypeSupported == 58 || item.DatatypeSupported == 61) ? "date" : "text"
                 });
-                
-            }); 
+                $scope.CheckNumericType($scope.rows[$scope.rows.length - 1]);
+
+            });
         }
         else {
-            $scope.isEdit=false;
+            $scope.isEdit = false;
             $scope.GetRule();
         }
         $scope.tableParams = new ngTableParams({
@@ -173,7 +181,7 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         var data = [];
         angular.forEach($scope.rows, function (item, i) {
             if (item.selectedtable && item.selectedOperator && item.selectedField && item.selectedValue) {
-                if (!item.isAvailable) {
+                if (item.isAvailable && !item.isAvailable) {
                     alert('Sorry one of the table u selected is not available');
                     return false;
                 }
@@ -201,29 +209,23 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             }).success(function (response) {
                 $scope.GetRule();
             });
-            
+
         }
-        
+
     };
-    $scope.DeleteRule = function () {
-        /// <signature>
-        ///<summary>Delete rule  </summary> 
-        /// </signature>
-        alert('are u sure want to delete the rule');
-        return false;
-    };
+    
     $scope.GetRule = function () {
         $http.get('http://localhost:35752/PatientService.svc/GetRule').success(function (response) {
             $scope.allRules = response;
             var data = {
-                colNames: ['Table Name', 'Field Name', 'Operator','', 'Action' ,'dfd' ],
+                colNames: ['Table Name', 'Field Name', 'Value', '', 'Action', ''],
                 data: $scope.allRules,
                 colModel: [
-                     { name: 'TableName',  width: 30, resizable: true},
+                     { name: 'TableName', width: 30, resizable: true },
                      { name: 'ColName', resizable: true, width: 30 },
                      { name: 'SelectedValue', resizable: true, width: 30 },
-                     { name: 'ColName', formatter: editLink, resizable: true, width: 5 }, 
-                     
+                     { name: 'ColName', formatter: editLink, resizable: true, width: 5 },
+                     { name: 'RuleName', width: 1 },
                       {
                           name: 'actions', index: 'actions', formatter: 'actions',
                           width: 4,
@@ -238,17 +240,16 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
                                       $("#eData").addClass("submit-btn");
                                   },
                                   delicon: 'delicon',
-                                  msg: 'Are you sure want to delete this rule?',
+                                  msg: 'Are you sure want to delete the selected rule?',
                                   beforeSubmit: function (id) {
-                                      //  Permobil.CustomNotes.Delete(id);
-                                      $('.ui-icon-closethick').trigger('click');
-                                      return "1";
+                                      console.log('going to delete');
+                                      $scope.DeleteRule(id);
+                                     // $('.ui-icon-closethick').trigger('click');
+                                     // return "1";
                                   }
                               }
                           }
-                      },
-            { name: 'RuleName',width:1, hidden: false }
-                ]
+                      }]
             };
             var searchObj = {
                 gridID: 'searchGrid',
@@ -263,12 +264,12 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
                 CaptionText: null,
                 customActionObj: null,
                 gridCompleted: $scope.GridCompleted,
-                onRowDelete: null,
+                onRowDelete: $scope.DeleteRule,
                 rowDoubleClickHandler: null,
                 onSelectRow: null
             };
             SE.CustomGrid.createGrid(searchObj);
-        }); 
+        });
     };
     $scope.GridCompleted = function (grid) {
         /// <signature>
@@ -282,17 +283,27 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
             $("#pgr_searchGrid_left div").show();
             $("#pgr_searchGrid_right").hide();
         }
+        $('.ui-widget-overlay').hide();
         //compiling DOM after table load
         $compile(angular.element('#searchGrid'))($scope);
     };
     function editLink(cellValue, options, rowdata, action) {
         return '<a  href="/#/Search?isedit=true&id=' + rowdata.RuleName + '" ><img src="../images/edit.png"/></a>';
         // <img src="../images/Remove.jpg"  ng-click="DeleteRule()"/>
-    }; 
-   
+    };
+
     $scope.editrule = function (grid, $window) {
         $location.path("/Search?edit/id=12");
         //$location.search('isedit', 'true').search('id', '12');
+    };
+    $scope.DeleteRule = function (id) {
+        /// <signature>
+        ///<summary>Delete rule  </summary> 
+        /// </signature>
+        var Rowdata = jQuery("#searchGrid").getRowData(id);
+        $http.get('http://localhost:35752/PatientService.svc/DeleteRule?ruleId=' + Rowdata.RuleName).success(function (response) {
+
+        });
     };
     $scope.GetSearch = function () {
         /// <signature>
@@ -345,7 +356,7 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
                 gridID: 'searchGrid',
                 ht: 250,
                 width: 800,
-               // shrinkToFit: false,
+                // shrinkToFit: false,
                 dataSource: data,
                 PageSize: 1,
                 sortBy: 'permobil_name',
@@ -371,9 +382,9 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         if ($scope.rows[$scope.rows.length - 1].selectedField
             && $scope.rows[$scope.rows.length - 1].selectedtable
             && $scope.rows[$scope.rows.length - 1].selectedOperator
-            && $scope.rows[$scope.rows.length - 1].selectedValue.length>0) {
-            var isDeletedTable = $scope.tables.filter(function (item) { return item.isAvailable === false }); 
-            if (isDeletedTable.length > 0) { 
+            && $scope.rows[$scope.rows.length - 1].selectedValue.length > 0) {
+            var isDeletedTable = $scope.tables.filter(function (item) { return item.isAvailable === false });
+            if (isDeletedTable.length > 0) {
                 alert("Table you have selected is not available in db. Please select valid one to proceed");
                 return false;
             }
@@ -382,7 +393,8 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
                     rowId: $scope.rows.length + 1, tables: $scope.rows[0]["tables"],
                     operator: $scope.rows[0]["operator"],
                     groupNo: $scope.getRandomSpan(),
-                    isGrouped: false
+                    isGrouped: false,
+                    isString: true
                 });
                 $scope.tableParams.reload();
             }
@@ -396,6 +408,29 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         $scope.rows.pop({ "rowId": $scope.rows.length + 1 });
         $scope.tableParams.reload();
     };
+    //Datepicker
+    //$scope.today = function () {
+    //    $scope.dt = new Date();
+    //};
+    //$scope.today();
+    $scope.clear = function () {
+        $scope.dt = null;
+    };
+    $scope.toggleMin = function () {
+        $scope.minDate = $scope.minDate ? null : new Date();
+    };
+    $scope.toggleMin();
+    $scope.open = function ($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.opened = true;
+    };
+
+    $scope.dateOptions = {
+        formatYear: 'yy',
+        startingDay: 1
+    };
+    $scope.format = 'MM.dd.yyyy';
 });
 
 SearchEngineApp.controller('groupCtrl', function ($scope) {
