@@ -18,20 +18,17 @@
                                 <i tooltip-popup-delay="0" tooltip-placement="top" tooltip="Some tooltip text" class="icon-info-sign"></i>
                             </div>
                             <div show-on-row-hover style="display:none;float:right" class="contextMenu">
-                                <ul show-on-row-hover style="display:none;">
+                                <a class="btn-link" ng-click="UnGroup(group.value)">
+                                    Un group
+                                </a>
+                                <!--<ul show-on-row-hover style="display:none;">
                                     <li id="contextmenu">
-
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="btn-link" ng-click="UnGroup(group.value)">
-                                                    Un group
-                                                </a>
-
-                                            </li>
-
-                                        </ul>
+                                        <a class="btn-link" ng-click="UnGroup(group.value)">
+                                            Un group
+                                        </a>
+                                        
                                     </li>
-                                </ul>
+                                </ul>-->
                             </div>
                         </td>
                     </tr>
@@ -49,6 +46,11 @@
                             <input ng-show="row.isNumericType" ng-model="row.selectedValue" numbers-only="numbers-only" type="text" id="{{row.rowId}}" name="{{row.rowId}}" />
                             <input ng-show="row.isString" ng-model="row.selectedValue" type="text" id="{{row.rowId}}" name="{{row.rowId}}" /><!--class="{{elem.class}}" placeholder="{{elem.placeholder}}" popover-trigger="focus" popover="{{elem.popoverText}}">-->
                             <input ng-model="row.selectedValue" ng-show="row.isDate" id="{{row.rowId}}" type="text" class="form-control" datepicker-popup="{{format}}" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" close-text="Close" />
+                            <select ng-model="row.selectedValue" ng-show="row.isBoolean" id="{{row.rowId}}" type="text">
+                                <option value="true">True</option>
+                                <option value="false">False</option>
+                            </select>
+                            
                             <img src="../images/Add.jpg" ng-click="addNewRow()" />
                             <img src="../images/Remove.jpg" ng-show="rows.length>1" ng-click="removeRow(item)" />
                             <!--<hr style="width:100%" ng-show="group.data.length>1 && group.data.length==row.rowId" />-->
@@ -58,7 +60,7 @@
                 </tbody>
             </table>
         </div>
-        <div>
+        <div style="margin-bottom: 10px;">
             <button type="button" class="btns" ng-click="SaveRule()">Save</button>
             <button type="button" class="btns" ng-click="GroupAnd()">Group AND</button>
             <button type="button" class="btns" ng-click="GroupOr()">Group OR</button>
@@ -78,7 +80,7 @@
                 </div>
             </modal-dialog>
         </div>
-        <div style="width: 100%; " ng-hide="(location.isedit &&  location.id)">
+        <div style="width: 100%; " class="table-responsive" ng-hide="(location.isedit &&  location.id)">
             <table id="searchGrid"></table>
 
         </div>

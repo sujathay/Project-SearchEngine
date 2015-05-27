@@ -34,9 +34,12 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
         var isNumeric = CDS_.Settings.NUMBER_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
         var isString = CDS_.Settings.STRING_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
         var isDate = CDS_.Settings.DATE_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
+        var isBoolean = CDS_.Settings.BOOLEAN_DATATYPE.filter(function (item) { return item === row.selectedField.DataTypeId });
         row.isNumericType = (isNumeric && isNumeric.length > 0) ? true : false;
         row.isString = (!row.isNumericType && isString && isString.length > 0) ? true : false;
         row.isDate = (!row.isNumericType && !row.isString && isDate && isDate.length > 0) ? true : false;
+        row.isBoolean = (!row.isNumericType && !row.isString && !row.isDate && isBoolean && isBoolean.length > 0) ? true : false;
+        //BOOLEAN_DATATYPE
     };
 
     $scope.UnGroup = function (selectedgroupNo) {
@@ -238,9 +241,10 @@ SearchEngineApp.controller("SearchController", function ($scope, $http, $filter,
                                       $("#dData").addClass("submit-btn");
                                       $("#eData").removeClass();
                                       $("#eData").addClass("submit-btn");
+                                      $("#eData").find(".ui-icon-cancel").hide();
                                   },
                                   delicon: 'delicon',
-                                  msg: 'Are you sure want to delete the selected rule?',
+                                  msg: 'Are you sure want to delete the rule?',
                                   beforeSubmit: function (id) {
                                       console.log('going to delete');
                                       $scope.DeleteRule(id);
